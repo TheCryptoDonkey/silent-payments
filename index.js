@@ -2,7 +2,7 @@ const bitcoin = require('bitcoinjs-lib');
 const ecc = require('tiny-secp256k1');
 const crypto = require('crypto');
 
-// Helper functions (unchanged)
+// Helper functions
 function ensureBuffer(input) {
     if (input instanceof Uint8Array) return Buffer.from(input);
     if (Buffer.isBuffer(input)) return input;
@@ -29,7 +29,6 @@ function derivePublicKey(privateKey) {
 }
 
 // Tagged hash function as defined in BIP340 and referenced in BIP352
-// https://bips.dev/352/#tagged-hash
 function taggedHash(tag, ...args) {
     const tagHash = crypto.createHash('sha256').update(tag).digest();
     const preimage = Buffer.concat([tagHash, tagHash, ...args.map(ensureBuffer)]);
@@ -40,14 +39,14 @@ function taggedHash(tag, ...args) {
 function createSilentPayment(recipientScanPubKey, recipientSpendPubKey, senderPrivKey, amount) {
     try {
         console.log('\n--- Creating Silent Payment ---');
-        console.log('BIP 352: https://bips.dev/352/');
+        console.log('Enhancing Privacy and Fungibility in Bitcoin');
 
         recipientScanPubKey = ensureBuffer(recipientScanPubKey);
         recipientSpendPubKey = ensureBuffer(recipientSpendPubKey);
         senderPrivKey = ensureBuffer(senderPrivKey);
 
+        // Key Privacy Feature: No Address Reuse
         console.log('\nStep 1: Validate input keys');
-        console.log('BIP 352 - Keys and Addresses: https://bips.dev/352/#keys-and-addresses');
         if (!isValidPublicKey(recipientScanPubKey)) throw new Error('Invalid recipient scan public key');
         if (!isValidPublicKey(recipientSpendPubKey)) throw new Error('Invalid recipient spend public key');
         if (!isValidPrivateKey(senderPrivKey)) throw new Error('Invalid sender private key');
@@ -59,22 +58,22 @@ function createSilentPayment(recipientScanPubKey, recipientSpendPubKey, senderPr
         const senderPubKey = derivePublicKey(senderPrivKey);
         console.log('Derived Sender Public Key:', bufferToHex(senderPubKey));
 
+        // Key Component: Ephemeral Keys
         console.log('\nStep 3: Generate ephemeral key');
-        console.log('BIP 352 - Ephemeral Key Generation: https://bips.dev/352/#ephemeral-key-generation');
         const r = crypto.randomBytes(32);
         const R = derivePublicKey(r);
         console.log('Ephemeral private key r:', bufferToHex(r));
         console.log('Ephemeral public key R:', bufferToHex(R));
 
+        // Key Component: Tagged Hashes
         console.log('\nStep 4: Compute shared secret');
-        console.log('BIP 352 - Shared Secret: https://bips.dev/352/#shared-secret');
         const e = taggedHash('BIP0352/generate', recipientScanPubKey, R);
         console.log('Shared secret e:', bufferToHex(e));
         const P = derivePublicKey(e);
         console.log('Point P:', bufferToHex(P));
 
+        // Key Component: Output Keys
         console.log('\nStep 5: Compute output key');
-        console.log('BIP 352 - Output Key Computation: https://bips.dev/352/#output-key-computation');
         const T = ecc.pointAdd(recipientScanPubKey, P);
         if (!T) throw new Error('Failed to add points');
         console.log('Point T (recipient_scan_pubkey + P):', bufferToHex(T));
@@ -84,8 +83,9 @@ function createSilentPayment(recipientScanPubKey, recipientSpendPubKey, senderPr
         const outputKey = ecc.pointAdd(recipientSpendPubKey, derivePublicKey(t));
         if (!outputKey) throw new Error('Failed to compute output key');
 
+        // Key Privacy Feature: Stealth Addresses
         console.log('\nSilent Payment created successfully');
-        console.log('Final Output Key:', bufferToHex(outputKey));
+        console.log('Final Output Key (Stealth Address):', bufferToHex(outputKey));
         console.log('Amount:', amount);
 
         return { outputKey, R, amount };
@@ -94,16 +94,18 @@ function createSilentPayment(recipientScanPubKey, recipientSpendPubKey, senderPr
         return null;
     }
 }
+
 // Recipient functions
 function scanForPayments(scanPrivKey, spendPubKey, incomingOutputs) {
     const receivedPayments = [];
 
     console.log('\n--- Scanning for Silent Payments ---');
-    console.log('BIP 352 - Receiving Silent Payments: https://bips.dev/352/#receiving-silent-payments');
+    console.log('Enhancing Privacy: Hidden Recipient');
 
     scanPrivKey = ensureBuffer(scanPrivKey);
     spendPubKey = ensureBuffer(spendPubKey);
 
+    // Key Components: Scan Keys and Spend Keys
     if (!isValidPrivateKey(scanPrivKey)) throw new Error('Invalid scan private key');
     if (!isValidPublicKey(spendPubKey)) throw new Error('Invalid spend public key');
 
@@ -114,8 +116,10 @@ function scanForPayments(scanPrivKey, spendPubKey, incomingOutputs) {
         try {
             const { outputKey, R, amount } = output;
 
-            console.log('\nChecking output:', bufferToHex(outputKey));
+            // Key Privacy Feature: Unlinkable Payments
+            console.log('\nChecking output for potential payment:', bufferToHex(outputKey));
 
+            // Reconstructing the Stealth Address
             console.log('Step 1: Compute shared secret (recipient side)');
             const scanPubKey = derivePublicKey(scanPrivKey);
             const e = taggedHash('BIP0352/generate', scanPubKey, R);
@@ -135,10 +139,11 @@ function scanForPayments(scanPrivKey, spendPubKey, incomingOutputs) {
             if (!calculatedOutputKey) throw new Error('Failed to compute output key');
             console.log('Calculated Output Key:', bufferToHex(calculatedOutputKey));
 
+            // Verifying the Payment
             if (ecc.isPoint(calculatedOutputKey) && ecc.isPoint(ensureBuffer(outputKey)) &&
                 Buffer.compare(calculatedOutputKey, ensureBuffer(outputKey)) === 0) {
                 receivedPayments.push({ amount, outputKey: calculatedOutputKey });
-                console.log('Payment found! Amount:', amount);
+                console.log('Silent Payment detected! Amount:', amount);
             } else {
                 console.log('No matching payment found for this output');
             }
@@ -152,10 +157,10 @@ function scanForPayments(scanPrivKey, spendPubKey, incomingOutputs) {
 
 // Demo
 try {
-    console.log('\n=== Starting Silent Payments Demo ===');
+    console.log('\n=== Silent Payments: Enhancing Bitcoin Privacy ===');
 
+    // Key Components: Generating necessary keys
     console.log('\nGenerating keys for demonstration');
-    console.log('BIP 352 - Keys and Addresses: https://bips.dev/352/#keys-and-addresses');
     const recipientScanPrivKey = crypto.randomBytes(32);
     const recipientSpendPrivKey = crypto.randomBytes(32);
     const recipientSpendPubKey = derivePublicKey(recipientSpendPrivKey);
@@ -169,17 +174,19 @@ try {
     console.log('Recipient Spend Public Key:', bufferToHex(recipientSpendPubKey));
     console.log('Sender Private Key:', bufferToHex(senderPrivKey));
 
+    // Creating a Silent Payment
     console.log('\nCreating a silent payment');
     const payment = createSilentPayment(recipientScanPubKey, recipientSpendPubKey, senderPrivKey, 100000);
 
-
     if (payment) {
+        // Simulating blockchain and demonstrating privacy features
         console.log('\nSimulating blockchain outputs');
         const incomingOutputs = [
             payment,
-            { outputKey: derivePublicKey(crypto.randomBytes(32)), R: derivePublicKey(crypto.randomBytes(32)), amount: 50000 } // Add a decoy output
+            { outputKey: derivePublicKey(crypto.randomBytes(32)), R: derivePublicKey(crypto.randomBytes(32)), amount: 50000 } // Decoy output for privacy
         ];
 
+        // Scanning for payments: Demonstrating how recipients detect their payments
         console.log('\nScanning for payments');
         const receivedPayments = scanForPayments(recipientScanPrivKey, recipientSpendPubKey, incomingOutputs);
 
