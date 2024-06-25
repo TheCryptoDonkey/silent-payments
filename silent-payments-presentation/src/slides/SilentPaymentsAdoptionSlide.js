@@ -71,7 +71,7 @@ export default function SilentPaymentsAdoptionSlide() {
                         },
                         {
                             name: "Payment Processors",
-                            importance: "Essential for integrating Silent Payments into existing payment infrastructures, facilitating merchant adoption."
+                            importance: "Not essential for Silent Payments adoption. Silent Payments can be implemented directly by users and wallets without intermediaries. Payment processors may eventually offer support, but are not crucial for the technology's implementation or initial adoption."
                         },
                         {
                             name: "Miners",
