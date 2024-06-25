@@ -13,5 +13,8 @@
   "dependencies": {
     "bitcoinjs-lib": "^6.1.6",
     "tiny-secp256k1": "^2.2.3"
+  },
+  "devDependencies": {
+
   }
 }
