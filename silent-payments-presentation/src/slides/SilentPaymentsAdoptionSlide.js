@@ -67,7 +67,7 @@ export default function SilentPaymentsAdoptionSlide() {
                         },
                         {
                             name: "Exchanges",
-                            importance: "Play a vital role in supporting Silent Payments for deposits and withdrawals, increasing liquidity and usability."
+                            importance: "Unlikely to be early adopters due to regulatory constraints. Silent Payments are more relevant for individual users, donations, and private transactions between peers, which don't typically involve exchanges."
                         },
                         {
                             name: "Payment Processors",
